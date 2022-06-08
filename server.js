@@ -38,3 +38,6 @@ serve(async (req) => {
 
 	});
 });
+
+//git commit -am "test"
+//git push   でいける
