@@ -17,13 +17,92 @@
 <body>
 	<h1> しりとり　</h1>
 
-	<p id="previousWord"></p>
+	<div class="container"> 
+		<div class ="MainImage">
+			<img src="Photo/testImage.jpg">
+		</div>
+		<div class = "speech">
+			<img src="Photo/normalSpeechBallon.png">
+		</div>
+		<p id="previousWord" class="tag"></p>
+		<p class="at">@shiriusu</p>
+		
+	</div>
+
+	<p id="output_csv"></p>
+	<script src=" ./read_csv.js"></script>
+
 
 	<input id="nextWordInput" type="text" />
 
 	<button id="nextWordSendButton">送信</button>
 
+	<button id="wordResetButton">しりとりリセット</button>
+
+
+	<div class="wrap-tab">
+	  <input id="tab-radio1" class="tab-radio" name="tab" type="radio" checked>
+	  <input id="tab-radio2" class="tab-radio" name="tab" type="radio">
+	  <input id="tab-radio3" class="tab-radio" name="tab" type="radio">
+	  <input id="tab-radio4" class="tab-radio" name="tab" type="radio">
+	  
+	  <ul class="list-tab-label">
+	    <li>
+	      <label id="tab-label1" class="tab-label" for="tab-radio1">設定</label>
+	    </li>
+	    <li>
+	      <label id="tab-label2" class="tab-label" for="tab-radio2">遊び方</label>
+	    </li>
+	    <li>
+	      <label id="tab-label3" class="tab-label" for="tab-radio3">履歴</label>
+	    </li>
+	    <li>
+	      <label id="tab-label4" class="tab-label" for="tab-radio4">タブ4</label>
+	    </li>
+	  </ul>
+	  
+	  <div class="wrap-tab-content">
+	    <div id="tab-content1" class="tab-content">
+	    	<script>
+	    		fetch( "./setting.txt" ).then( res => res.text() ).then(text => {
+	    			document.getElementById( "tab-content1" ).textContent = text;
+	    		});
+	    	</script>
+	    </div>
+	    <div id="tab-content2" class="tab-content">
+	    	<script>
+	    		fetch( "./playSetting.txt" ).then( res => res.text() ).then(text => {
+	    			document.getElementById( "tab-content2" ).textContent = text;
+	    		});
+	    	</script>
+	    </div>
+	    
+	    <div id="tab-content3" class="tab-content">
+	      
+	    </div>
+	    
+	    <div id="tab-content4" class="tab-content">
+	      <p>タブ4タブ4タブ4</p>
+	    </div>
+	  </div>
+	</div>
+
 	<script type="module">
+		let historyCount = 0;//送信した回数を記録する変数
+
+		let wordList = ["しりとり"];//履歴を保存する配列
+
+		//HTML要素追加関数
+		var addHistoryFunction = count => {
+			//id属性で要素を取得
+			var textBoxElement = document.getElementById("tab-content3");
+			//新しいHTML要素を作成
+			var newElement = document.createElement('p');
+			newElement.textContent = `${count}:${wordList[count]}`;
+			//指定した要素の中の末尾に挿入
+			textBoxElement.appendChild(newElement);
+		}
+
 		window.onload = async (event) => {
 		//	await fetch("/shiritori",{
 		//		method: "POST",
@@ -32,6 +111,10 @@
 		//	});
 			const response = await fetch("/shiritori");
 			const previousWord = await response.text();
+
+			//初期状態の要素の追加
+			wordList[historyCount] = `${previousWord}`;
+			addHistoryFunction(historyCount);
 			
 			const para = document.querySelector("#previousWord");
 			para.innerText = `前の単語:${previousWord}`;
@@ -49,85 +132,61 @@
 				alert(await response.text());
 				return;
 			}
-			const previousWord = await response.text();
 
+			const previousWord = await response.text();
+			const para = document.querySelector("#previousWord");
+			console.log(`${previousWord}`);
+			//履歴のリセット
+			var listElement = document.getElementById("tab-content3");
+
+			for (let roopCount = historyCount; roopCount >=0; roopCount--) {
+
+				var removeElement = listElement.removeChild(listElement.firstElementChild);
+
+				if ( wordList[roopCount] === `${previousWord}`){
+					alert("同じ文字は使用不可");
+					return;
+				}
+				
+			}
+			//履歴のループ処理
+			historyCount++;
+			wordList[historyCount] = `${previousWord}`;
+			console.log(historyCount);
+
+			for (let roopCount = historyCount; roopCount >=0; roopCount--) {
+				console.log(wordList[roopCount]);
+				addHistoryFunction(roopCount);
+
+			}
+			para.innerText = `前の単語:${previousWord}`;
+		};
+
+
+		//リセットボタン作成
+		document.querySelector("#wordResetButton").onclick = async(event) => {
+			const nextWord = "しりとり";
+			const response = await fetch("/shiritori",{
+				method: "POST",
+				headers: {"Content-Type": "application/json"},
+				body: JSON.stringify({ nextWord: "しりとり" })
+			});
+
+			const previousWord = await response.text();
+			//履歴のリセット
+			var listElement = document.getElementById("tab-content3");
+
+			for (let roopCount = historyCount; roopCount >=0; roopCount--) {
+				var removeElement = listElement.removeChild(listElement.firstElementChild);
+			}
+			historyCount = 0; //カウントもリセット
+			wordList[historyCount] = `${previousWord}`;
+			//初期状態の要素の追加
+			addHistoryFunction(historyCount);
 			const para = document.querySelector("#previousWord");
 			para.innerText = `前の単語:${previousWord}`;
 		};
 	</script>
-
-
-
-	<div class="wrap-tab">
-	  <input id="tab-radio1" class="tab-radio" name="tab" type="radio" checked>
-	  <input id="tab-radio2" class="tab-radio" name="tab" type="radio">
-	  <input id="tab-radio3" class="tab-radio" name="tab" type="radio">
-	  <input id="tab-radio4" class="tab-radio" name="tab" type="radio">
-	  
-	  <ul class="list-tab-label">
-	    <li>
-	      <label id="tab-label1" class="tab-label" for="tab-radio1">タブ1</label>
-	    </li>
-	    <li>
-	      <label id="tab-label2" class="tab-label" for="tab-radio2">タブ2</label>
-	    </li>
-	    <li>
-	      <label id="tab-label3" class="tab-label" for="tab-radio3">タブ3</label>
-	    </li>
-	    <li>
-	      <label id="tab-label4" class="tab-label" for="tab-radio4">タブ4</label>
-	    </li>
-	  </ul>
-	  
-	  <div class="wrap-tab-content">
-	    <div id="tab-content1" class="tab-content">
-	      <p>タブ1タブ1タブ1</p>
-	    </div>
-
-	    <div id="tab-content2" class="tab-content">
-	      <p>タブ2タブ2タブ2</p>
-	    </div>
-	    
-	    <div id="tab-content3" class="tab-content">
-	      <p>タブ3タブ3タブ3</p>
-	    </div>
-	    
-	    <div id="tab-content4" class="tab-content">
-	      <p>タブ4タブ4タブ4</p>
-	    </div>
-	  </div>
-	</div>
-
-
-
-<!--
-	<div class="wrap-tab">
-		<ul id = "js-tab" class="list-tab">
-			<li class="active">タブ１</li>
-			<li>タブ２</li>
-			<li>タブ３</li>
-			<li>タブ４</li>
-		</ul>
-
-		<div class="wrap-tab-content">
-			<div class="tab-content active">
-				<p>タブ１タブ１</p>
-			</div>
-
-			<div class="tab-content">
-				<p>タブ２タブ２</p>
-			</div>
-
-			<div class="tab-content">
-				<p>タブ３タブ３</p>
-			</div>
-
-			<div class="tab-content">
-				<p>タブ４タブ４</p>
-			</div>
-		</div>
-	</div>
--->
 
 
 </body>
