@@ -19,7 +19,7 @@
 
 	<div class="container"> 
 		<div class ="MainImage">
-			<img src="Photo/testImage.jpg">
+			<img src="Photo/mainImage.png">
 		</div>
 		<div class = "speech">
 			<img src="Photo/normalSpeechBallon.png">
@@ -28,10 +28,6 @@
 		<p class="at">@shiriusu</p>
 		
 	</div>
-
-	<p id="output_csv"></p>
-	<script src=" ./read_csv.js"></script>
-
 
 	<input id="nextWordInput" type="text" />
 
@@ -88,9 +84,27 @@
 	</div>
 
 	<script type="module">
+		//CSV呼び出し関数
+		import setWordFunction, {randomWord} from "./read_csv.js";
+		//CPUの単語呼び出し関数
+
+		import wordException from "./wordsetting.js";
+		//ひらがな配列
+		let firstWordList = ["あ","い","う","え","お",
+													"か","き","く","け","こ",
+													"さ","し","す","せ","そ",
+													"た","ち","つ","て","と",
+													"な","に","ぬ","ね","の",
+													"は","ひ","ふ","へ","ほ",
+													"ま","み","む","め","も",
+													"ら","り","る","れ","ろ",
+													"や","ゆ","よ","を","ん"];
+
 		let historyCount = 0;//送信した回数を記録する変数
 
 		let wordList = ["しりとり"];//履歴を保存する配列
+
+		let CPUword;
 
 		//HTML要素追加関数
 		var addHistoryFunction = count => {
@@ -102,39 +116,41 @@
 			//指定した要素の中の末尾に挿入
 			textBoxElement.appendChild(newElement);
 		}
+		
 
-		window.onload = async (event) => {
-		//	await fetch("/shiritori",{
-		//		method: "POST",
-		//		headers: {"Content-Type": "applocation/json"},
-		//		body: JSON.stringify({ nextWord: "しりとり" })
-		//	});
-			const response = await fetch("/shiritori");
-			const previousWord = await response.text();
-
-			//初期状態の要素の追加
-			wordList[historyCount] = `${previousWord}`;
-			addHistoryFunction(historyCount);
+		//CPU履歴確認関数
+		var selectwordCPU = (history, line ) => {
+			console.log(line);
+			//CPUの単語呼び出し
+			var CPUword = randomWord(line);
+			console.log(CPUword);
+			//履歴の確認
+			for (let roopCount = historyCount; roopCount >=0; roopCount--) {
+				if (history[roopCount] === CPUword) {
+					//被ると呼び直して単語を書き換える
+					CPUword =selectwordCPU(history ,line);
+				}
+			}
 			
-			const para = document.querySelector("#previousWord");
-			para.innerText = `前の単語:${previousWord}`;
-		};
+			return CPUword;
+		}
 
-		document.querySelector("#nextWordSendButton").onclick = async(event) => {
-			const nextWord = document.querySelector("#nextWordInput").value;
+
+		
+		var CPUsetting = async(event)=> {
+			const nextWord = CPUword;
 			const response = await fetch("/shiritori",{
 				method: "POST",
 				headers: { "Content-Type": "application/json"},
-				body: JSON.stringify({ nextWord })
+				body: JSON.stringify({ nextWord :CPUword})
 			});
 
 			if (response.status / 100 !== 2) {
 				alert(await response.text());
 				return;
 			}
-
+			//単語更新
 			const previousWord = await response.text();
-			const para = document.querySelector("#previousWord");
 			console.log(`${previousWord}`);
 			//履歴のリセット
 			var listElement = document.getElementById("tab-content3");
@@ -147,7 +163,6 @@
 					alert("同じ文字は使用不可");
 					return;
 				}
-				
 			}
 			//履歴のループ処理
 			historyCount++;
@@ -157,9 +172,74 @@
 			for (let roopCount = historyCount; roopCount >=0; roopCount--) {
 				console.log(wordList[roopCount]);
 				addHistoryFunction(roopCount);
-
 			}
+			const para = document.querySelector("#previousWord");
 			para.innerText = `前の単語:${previousWord}`;
+		}
+
+
+		window.onload = async (event) => {
+			const response = await fetch("/shiritori");
+			const previousWord = await response.text();
+			//CSV配列の作成
+			setWordFunction();
+			//初期状態の要素の追加
+			wordList[historyCount] = `${previousWord}`;
+			addHistoryFunction(historyCount);
+			const para = document.querySelector("#previousWord");
+			para.innerText = `前の単語:${previousWord}`;
+		};
+
+
+		document.querySelector("#nextWordSendButton").onclick = async(event) => {
+			//プレイヤー側の単語の確認
+			const nextWord = document.querySelector("#nextWordInput").value;
+			const response = await fetch("/shiritori",{
+				method: "POST",
+				headers: { "Content-Type": "application/json"},
+				body: JSON.stringify({ nextWord })
+			});
+
+			if (response.status / 100 !== 2) {
+				alert(await response.text());
+				return;
+			}
+			//単語更新
+			const previousWord = await response.text();
+			console.log(`${previousWord}`);
+			//履歴のリセット
+			var listElement = document.getElementById("tab-content3");
+
+			for (let roopCount = historyCount; roopCount >=0; roopCount--) {
+
+				var removeElement = listElement.removeChild(listElement.firstElementChild);
+
+				if ( wordList[roopCount] === `${previousWord}`){
+					alert("同じ文字は使用不可");
+					return;
+				}
+			}
+			//履歴のループ処理
+			historyCount++;
+			wordList[historyCount] = `${previousWord}`;
+
+			for (let roopCount = historyCount; roopCount >=0; roopCount--) {
+				addHistoryFunction(roopCount);
+			}
+
+			//CPUのしょり
+			let line =0;
+			let firstWord =wordException(previousWord.charAt(previousWord.length - 1));
+
+			for (let count=0 ; count <= firstWordList.length; count++) {
+						//行のひらがなを探す
+				if (firstWordList[count] === firstWord) {
+						line = count;
+				}
+			}
+			//単語決定
+			CPUword = selectwordCPU(wordList , line);
+			CPUsetting(CPUword);
 		};
 
 

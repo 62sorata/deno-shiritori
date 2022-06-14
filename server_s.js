@@ -1,6 +1,8 @@
 import{ serve } from "https://deno.land/std@0.138.0/http/server.ts";
 import{ serveDir } from "https://deno.land/std@0.138.0/http/file_server.ts";
 
+import wordException from "./public/wordsetting.js";
+
 let previousWord = "しりとり";
 
 console.log("Listening on http://localhost:8000");
@@ -17,12 +19,15 @@ serve(async (req) => {
 		const requestJson = await req.json();
 		const nextWord = requestJson.nextWord;
 
+		//判定用の変数
+		let firstNextWord = wordException(nextWord.charAt(0));
+		let lastPreviousWord = wordException(previousWord.charAt(previousWord.length - 1));
 
 		if(nextWord !== "しりとり"){
 			console.log(previousWord);
 			if (
 				nextWord.length > 0 &&
-				previousWord.charAt(previousWord.length - 1) !== nextWord.charAt(0)
+				lastPreviousWord !== firstNextWord
 				){
 				return new Response("前の単語に続いていません。",{ status: 400 });
 			}
