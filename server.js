@@ -1,39 +1,11 @@
 import{ serve } from "https://deno.land/std@0.138.0/http/server.ts";
-import{ serveDir } from
-"https://deno.land/std@0.138.0/http/file_server.ts";
+import{ serveDir } from "https://deno.land/std@0.138.0/http/file_server.ts";
+
+import wordException from "./public/wordsetting.js";
 
 let previousWord = "しりとり";
 
 console.log("Listening on http://localhost:8000");
-
-document.addEventListener('DOMContentLoaded',function(){
-	tabs = document.querySelectorAll('#js-tab li');
-	for(i=0; i<tabs.length; i++) {
-		tabs[i].addEventListener('click', tabSwitch, false);
-	}
-
-	function tabSwitch(){
-		tabs = document.querySelectorAll('#js-tab li');
-		var node = Array.prototype.slice.call(tabs, 0);
-		node.forEach(function (element) {
-			element.classList.remove('active');
-		});
-
-		this.classList.add('active');
-
-		content = document.querySelectorAll('.tab-content');
-		var node = Array.prototype.slice.call(content, 0);
-		node.forEach(function(element) {
-			element.classList.remove('active');
-		});
-
-		const arrayTabs = Array.prototype.slice.call(tabs);
-		const index = arrayTabs.indexOf(this);
-
-		document.querySelectorAll('.tab-content')[index].classList.add('active');
-	};
-});
-
 serve(async (req) => {
 
 	const pathname = new URL(req.url).pathname;
@@ -47,19 +19,36 @@ serve(async (req) => {
 		const requestJson = await req.json();
 		const nextWord = requestJson.nextWord;
 
-		if (nextWord.length > 0 &&　previousWord.charAt(previousWord.length - 1) !== nextWord.charAt(0)){  
-			return new Response("前の単語に続いていません。",{ status: 400 });
+		//判定用の変数
+		let firstNextWord = wordException(nextWord.charAt(0));
+		let lastPreviousWord = wordException(previousWord.charAt(previousWord.length - 1));
+
+		if(nextWord !== "しりとり"){
+			console.log(previousWord);
+			if (
+				nextWord.length > 0 &&
+				lastPreviousWord !== firstNextWord
+				){
+				return new Response("前の単語に続いていません。",{ status: 400 });
+			}
 		}
 
-		if (!text.value || !text.value.match(/\S/g)){
-			return new Response("空白のまま入力してはいけません。",{ status: 400 });
+		if (!nextWord.trim() ){
+			return new Response("空白はダメ",{ status: 400 });
 		}
+
+		if ( nextWord.charAt(nextWord.length -1) === "ん") {
+			return new Response("んで終わっています",{ status: 400 });
+		}
+
+
 
 		previousWord = nextWord;
 		return new Response(previousWord);
 	}
 
-	return serveDir(req, {
+	//ファイルサーバー	
+	return serveDir(req, {  
 
 		fsRoot: "public",
 		urlRoot: "",

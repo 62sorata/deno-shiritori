@@ -35,6 +35,13 @@
 
 	<button id="wordResetButton">しりとりリセット</button>
 
+	<div style = "position: relative;text-align:center;display:inline-block; width:180px; border:1px solid #cccccc;">
+		<div id = "progress1" class="gage" style = "width:0%; background-color:#FFC9D2;">
+		</div>
+		<span style = "position: relative;z-index: 5;">好感度</span>
+	</div>
+	
+
 
 	<div class="wrap-tab">
 	  <input id="tab-radio1" class="tab-radio" name="tab" type="radio" checked>
@@ -105,6 +112,8 @@
 		let wordList = ["しりとり"];//履歴を保存する配列
 
 		let CPUword;
+
+		var prog_value = 0;  //プログレスバーの幅を取得
 
 		//HTML要素追加関数
 		var addHistoryFunction = count => {
@@ -178,6 +187,7 @@
 		}
 
 
+
 		window.onload = async (event) => {
 			const response = await fetch("/shiritori");
 			const previousWord = await response.text();
@@ -237,6 +247,13 @@
 						line = count;
 				}
 			}
+
+			if (prog_value < 100) {
+				prog_value = prog_value +100;
+				document.getElementById('progress1').style.width =  prog_value + '%';
+			}
+
+
 			//単語決定
 			CPUword = selectwordCPU(wordList , line);
 			CPUsetting(CPUword);
